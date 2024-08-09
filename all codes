@@ -1,0 +1,127 @@
+sudo.. 
+
+sudo apt update
+sudo apt upgrade
+sudo apt install docker.io
+sudo apt install docker-compose
+
+docker-compose up -d
+
+
+docker exec -it mysql-master mysql -uroot -ppasspass23 -e "SHOW MASTER STATUS\G"
+
+docker exec -it mysql-slave mysql -uroot -prootpassword -e "
+CHANGE MASTER TO
+    MASTER_HOST='mysql-master',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='passpass23',
+    MASTER_LOG_FILE='mysql-bin.000001',
+    MASTER_LOG_POS=154;
+START SLAVE;"
+
+
+docker exec -it mysql-slave mysql -uroot -prootpassword -e "SHOW SLAVE STATUS\G"
+
+
+
+-- Debigging --
+
+If wrong slave configured
+
+docker exec -it mysql-slave mysql -uroot -prootpassword -e "
+STOP SLAVE IO_THREAD FOR CHANNEL '';
+CHANGE MASTER TO
+    MASTER_HOST='mysql-master',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='passpass23',
+    MASTER_PORT=3307,
+    MASTER_LOG_FILE='mysql-bin.000001',
+    MASTER_LOG_POS=154;
+START SLAVE;"
+
+
+- To check replication user
+SELECT user, host FROM mysql.user WHERE user = 'replicator';
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+successful 
+
+sudo apt update
+sudo apt upgrade
+sudo apt install docker.io
+sudo apt install docker-compose
+
+docker-compose up -d
+
+
+docker exec -it mysql-master mysql -uroot -prootpassword -e "SHOW MASTER STATUS\G"
+
+docker exec -it mysql-slave mysql -uroot -prootpassword -e "
+CHANGE MASTER TO
+    MASTER_HOST='127.0.0.1',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='passpass23',
+    MASTER_PORT=3308,
+    MASTER_LOG_FILE='mysql-bin.000001',
+    MASTER_LOG_POS=154;
+START SLAVE;"
+
+
+docker exec -it mysql-slave mysql -uroot -prootpassword -e "SHOW SLAVE STATUS\G"
+
+
+mysql -ureplicator -ppasspass23 -P 3306 -h mysql-master
+
+-- Debigging --
+
+If wrong slave configured
+
+docker exec -it mysql-slave mysql -uroot -prootpassword -e "
+STOP SLAVE IO_THREAD FOR CHANNEL '';
+CHANGE MASTER TO
+    MASTER_HOST='172.31.54.18',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='newpassword',
+    MASTER_PORT=3307,
+    MASTER_LOG_FILE='mysql-bin.000001',
+    MASTER_LOG_POS=154;
+START SLAVE;"
+
+
+- To check replication user
+SELECT user, host FROM mysql.user WHERE user = 'replicator';
+
+-- Change replication user pass
+
+
+ALTER USER 'replicator'@'%' IDENTIFIED BY 'newpassword';
+FLUSH PRIVILEGES;
+
+-- To skip error query
+docker exec -it mysql-slave mysql -uroot -prootpassword
+STOP SLAVE SQL_THREAD;
+SET GLOBAL SQL_SLAVE_SKIP_COUNTER = 1;
+START SLAVE SQL_THREAD;
+SHOW SLAVE STATUS\G
+
+----------------------------------------------------------------------------------------------------
+
+OVS
+
+OVS 
+
+sudo apt-get install openvswitch-switch
+sudo ovs-vsctl add-br br-slave
+sudo ovs-vsctl add-port br-master eth1
+sudo ovs-vsctl add-port br-slave gre0 -- set interface gre0 type=gre options:remote_ip=172.31.90.214
+sudo ovs-vsctl add-port br-slave vxlan0 -- set interface vxlan0 type=vxlan options:remote_ip=172.31.90.214
+sudo ip addr add 192.168.100.2/24 dev br-slave
+sudo ip link set br-slave up
+ping 192.168.100.2
+
+
+--------------------------------------------------------------------------------------------------------------
+
+
